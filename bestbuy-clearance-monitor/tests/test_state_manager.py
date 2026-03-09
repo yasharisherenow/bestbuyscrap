@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.state_manager import load_json, load_watchlist, save_json
+from src.state_manager import load_json, load_watchlist, save_json, append_log
 
 
 def test_load_json_missing_returns_default(tmp_path: Path) -> None:
@@ -24,3 +24,12 @@ def test_load_watchlist_normalizes_values(tmp_path: Path) -> None:
 
     assert watchlist["skus"] == ["123"]
     assert watchlist["keywords"] == ["rtx"]
+
+
+def test_append_log_creates_and_appends(tmp_path: Path) -> None:
+    path = tmp_path / "run.log"
+    append_log(path, "first entry")
+    append_log(path, "second entry")
+
+    text = path.read_text(encoding="utf-8").splitlines()
+    assert text == ["first entry", "second entry"]

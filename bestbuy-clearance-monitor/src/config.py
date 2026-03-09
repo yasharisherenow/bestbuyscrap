@@ -6,6 +6,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+import dotenv
+
 
 DEFAULT_CATEGORY_URL = (
     "https://www.bestbuy.ca/en-ca/category/gaming-desktop-computers/30441"
@@ -29,6 +31,7 @@ class Config:
     state_path: Path = Path("data/state.json")
     last_run_path: Path = Path("data/last_run.json")
     watchlist_path: Path = Path("data/watchlist.json")
+    run_log_path: Path = Path("data/run.log")
 
     @property
     def telegram_enabled(self) -> bool:
@@ -38,6 +41,7 @@ class Config:
 
 def load_config() -> Config:
     """Load configuration from environment with safe defaults."""
+    dotenv.load_dotenv()
     timeout = int(os.getenv("REQUEST_TIMEOUT_SEC", "20"))
     max_retries = int(os.getenv("MAX_RETRIES", "4"))
     backoff = float(os.getenv("BACKOFF_FACTOR", "1.5"))

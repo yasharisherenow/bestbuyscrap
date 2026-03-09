@@ -37,3 +37,13 @@ def load_watchlist(path: Path) -> dict[str, list[str]]:
         "skus": [str(item).strip() for item in skus if str(item).strip()],
         "keywords": [str(item).strip().lower() for item in keywords if str(item).strip()],
     }
+
+
+def append_log(path: Path, entry: str) -> None:
+    """Append a single-line log entry to a text file, creating parent folders.
+
+    Each run can record status data; callers should include a timestamp.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as file:
+        file.write(entry + "\n")

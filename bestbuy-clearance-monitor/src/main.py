@@ -10,7 +10,7 @@ from .diffing import compare_states, has_meaningful_changes
 from .notifier import TelegramNotifier, build_summary_messages
 from .parser import parse_product_page
 from .scraper import Scraper
-from .state_manager import load_json, load_watchlist, save_json
+from .state_manager import load_json, load_watchlist, save_json, append_log
 
 
 def setup_logging() -> None:
@@ -43,6 +43,14 @@ def matches_watchlist(product: dict[str, str], watchlist: dict[str, list[str]]) 
     ).lower()
 
     return any(keyword in haystack for keyword in keywords)
+
+
+def is_available(product: dict[str, str]) -> bool:
+    """Check if product is available for pickup or shipping."""
+    return (
+        product.get("online_availability") == "available_online" or
+        product.get("pickup_availability") == "available_for_pickup"
+    )
 
 
 def run() -> int:
@@ -80,9 +88,16 @@ def run() -> int:
 
         diff = compare_states(previous_state, current_state)
 
-        if has_meaningful_changes(diff):
+        # Filter to only notify on available products
+        filtered_diff = {
+            "added": [item for item in diff["added"] if is_available(item["current"])],
+            "changed": [item for item in diff["changed"] if is_available(item["current"])],
+            "removed": [],  # Don't notify on removals
+        }
+
+        if has_meaningful_changes(filtered_diff):
             if config.telegram_enabled:
-                messages = build_summary_messages(diff)
+                messages = build_summary_messages(filtered_diff)
                 notifier = TelegramNotifier(
                     bot_token=config.telegram_bot_token,
                     chat_id=config.telegram_chat_id,
@@ -106,6 +121,16 @@ def run() -> int:
         "status": status,
     }
     save_json(config.last_run_path, last_run)
+
+    # log every run to a simple text file for historical record
+    try:
+        entry = (
+            f"{last_run['last_run_utc']} products={last_run['products_seen']} "
+            f"alerts={last_run['alerts_sent']} status={last_run['status']}"
+        )
+        append_log(config.run_log_path, entry)
+    except Exception:
+        logger.exception("Failed to append run log")
 
     return 0 if status == "ok" else 1
 

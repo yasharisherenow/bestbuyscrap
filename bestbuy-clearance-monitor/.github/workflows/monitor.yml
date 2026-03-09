@@ -3,14 +3,14 @@ name: Best Buy Clearance Monitor
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "0 12-23 * * *"
 
 permissions:
   contents: write
 
 concurrency:
   group: bestbuy-clearance-monitor
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   monitor:
